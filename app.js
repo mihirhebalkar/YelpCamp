@@ -4,10 +4,10 @@ const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
 const Campground = require('./models/campground');
 const methodOverride = require('method-override');
-const ExpressError = require('./utils/ExpressError')
+const ExpressError = require('./utils/ExpressError');
 const catchAsync = require('./utils/catchAsync');
-const { error } = require('console');
-
+const { title } = require('process');
+const {campgroundSchema} = require('./schemas');
 
 mongoose.connect('mongodb://localhost:27017/yelp-camp',{
     useNewURLParser: true,
@@ -30,6 +30,16 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(methodOverride('_method'));
 
+const validateCampground = (req, res, next) => {
+    const { error } = campgroundSchema.validate(req.body);
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',')
+        throw new ExpressError(msg, 400)
+    } else {
+        next();
+    }
+}
+
 app.get('/', (req, res) => {
     res.render('home');
 })
@@ -43,9 +53,9 @@ app.get('/campgrounds/new', catchAsync(async(req, res)=> {
     res.render('campgrounds/new');
 }))
 
-app.post('/campgrounds', catchAsync(async(req, res) => {
+app.post('/campgrounds',validateCampground, catchAsync(async(req, res) => {
 
-    if(!req.body.campground) throw new ExpressError('Invalid campground data',400);
+    // if(!req.body.campground) throw new ExpressError('Invalid campground data',400);
     const campground = new Campground(req.body.campground);
     await campground.save();
     res.redirect(`/campgrounds/${campground._id}`);
@@ -61,7 +71,7 @@ app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
     res.render('campgrounds/edit', {campground});
 }))
 
-app.put('/campgrounds/:id', catchAsync(async (req, res) => {
+app.put('/campgrounds/:id',validateCampground, catchAsync(async (req, res) => {
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(id,{ ...req.body.campground });
     res.redirect(`/campgrounds/${campground._id}`);
@@ -78,8 +88,9 @@ app.all('*',(req, res,next) => {
 })
 
 app.use((err,req,res,next) => {
-    const {statusCode=500, message='Something went wrong!'} = err
-    res.status(statusCode).send(message);
+    const {statusCode=500} = err;
+    if(!err.message) err.message = 'Something went wrong!'
+    res.status(statusCode).render('error', { err });
 })
 
 
