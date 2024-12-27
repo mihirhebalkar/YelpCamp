@@ -9,10 +9,7 @@ const catchAsync = require('./utils/catchAsync');
 const campgrounds = require('./routes/campground');
 const reviews = require('./routes/review');
 
-mongoose.connect('mongodb://localhost:27017/yelp-camp',{
-    useNewURLParser: true,
-    useUnifiedTopology: true
-});
+mongoose.connect('mongodb://localhost:27017/yelp-camp',{});
 
 const app = express();
 
@@ -29,6 +26,8 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(methodOverride('_method'));
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/campgrounds', campgrounds);
 app.use('/campgrounds/:id/reviews', reviews)
