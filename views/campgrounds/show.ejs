@@ -1,8 +1,10 @@
 <% layout('layouts/boilerplate') %>
 <link rel="stylesheet" href="/stylesheets/stars.css">
 
+
   <div class="row">
     <div class="col-6">
+      <div class="map" style="width: 400px; height: 300px"></div>
       <div id="carouselControls" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner">
           <% campground.images.forEach((img,i)=> { %>
@@ -101,3 +103,8 @@
         <%}%>
     </div>
   </div>
+  <script>
+    const maptilerApiKey = '<%-process.env.MAPTILER_API_KEY%>';
+    const campground = <%-JSON.stringify(campground)%>
+  </script>
+  <script src="/javascripts/showPageMap.js"></script>
