@@ -1,8 +1,8 @@
 maptilersdk.config.apiKey = maptilerApiKey;
 
 const map = new maptilersdk.Map({
-    container: 'map',
-    style: maptilersdk.MapStyle.BRIGHT,
+    container: 'cluster-map',
+    style: "topo-v2-dark",
     center: [-103.59179687498357, 40.66995747013945],
     zoom: 3
 });
