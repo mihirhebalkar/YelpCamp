@@ -14,6 +14,9 @@ const catchAsync = require('./utils/catchAsync');
 const passport = require('passport');
 const LocalStategy = require('passport-local');
 const User = require('./models/user');
+const helmet = require('helmet');
+
+const mongoSanitize = require('express-mongo-sanitize');
 
 const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
@@ -34,17 +37,20 @@ app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(mongoSanitize());
 
 app.use(express.urlencoded({ extended: true }));
 
 app.use(methodOverride('_method'));
 
 const sessionConfig = {
+    name : 'session',
     secret : 'secretkey',
     resave : false,
     saveUninitialized : true,
     cookie : {
         httpOnly : true,
+        // secure: true,
         expires : Date.now() + 1000*60*60*24*7,
         maxAge : 1000*60*60*24*7
     }
@@ -53,6 +59,50 @@ const sessionConfig = {
 app.use(session(sessionConfig));
 
 app.use(flash());
+app.use(helmet());
+
+const scriptSrcUrls = [
+    "https://stackpath.bootstrapcdn.com/",
+    "https://kit.fontawesome.com/",
+    "https://cdnjs.cloudflare.com/",
+    "https://cdn.jsdelivr.net",
+    "https://cdn.maptiler.com/", 
+];
+const styleSrcUrls = [
+    "https://kit-free.fontawesome.com/",
+    "https://stackpath.bootstrapcdn.com/",
+    "https://fonts.googleapis.com/",
+    "https://use.fontawesome.com/",
+    "https://cdn.jsdelivr.net",
+    "https://cdn.maptiler.com/", 
+];
+const connectSrcUrls = [
+    "https://api.maptiler.com/", 
+];
+
+const fontSrcUrls = [];
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: [],
+            connectSrc: ["'self'", ...connectSrcUrls],
+            scriptSrc: ["'unsafe-inline'", "'self'", ...scriptSrcUrls],
+            styleSrc: ["'self'", "'unsafe-inline'", ...styleSrcUrls],
+            workerSrc: ["'self'", "blob:"],
+            objectSrc: [],
+            imgSrc: [
+                "'self'",
+                "blob:",
+                "data:",
+                "https://res.cloudinary.com/da0gltkkh/", //SHOULD MATCH YOUR CLOUDINARY ACCOUNT! 
+                "https://images.unsplash.com/",
+                "https://www.pexels.com/",
+                "https://fontawesome.com/",
+            ],
+            fontSrc: ["'self'", ...fontSrcUrls],
+        },
+    })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -60,6 +110,7 @@ passport.use(new LocalStategy(User.authenticate()));
 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
+
 
 app.use((req,res,next)=> {
     res.locals.currentUser = req.user;
