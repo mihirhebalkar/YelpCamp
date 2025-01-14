@@ -21,9 +21,12 @@ const mongoSanitize = require('express-mongo-sanitize');
 const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
+const MongoStore = require('connect-mongo');
 
+// const dburl = process.env.DB_URL;
+const dburl = process.env.DB_URL || "mongodb://localhost:27017/yelp-camp";
 
-mongoose.connect('mongodb://localhost:27017/yelp-camp',{});
+mongoose.connect(dburl,{});
 
 const app = express();
 
@@ -43,9 +46,24 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(methodOverride('_method'));
 
+const secret = process.env.SECRET || 'secretkey';
+
+const store = MongoStore.create({
+    mongoUrl: dburl, 
+    touchAfter: 24*3600,
+    crypto: {
+        secret: secret
+    }
+})
+
+store.on('error', function(e){
+    console.log("Session store error!", e)
+})
+
 const sessionConfig = {
+    store: store,
     name : 'session',
-    secret : 'secretkey',
+    secret : secret,
     resave : false,
     saveUninitialized : true,
     cookie : {
@@ -137,8 +155,10 @@ app.use((err,req,res,next) => {
     res.status(statusCode).render('error', { err });
 })
 
-app.listen(3000, ()=> {
-    console.log("Serving on port 3000"); 
+const port = process.env.PORT || 3000;
+
+app.listen(port, ()=> {
+    console.log(`Serving on port ${port}`); 
 })
 
 
