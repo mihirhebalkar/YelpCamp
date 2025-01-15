@@ -3,7 +3,6 @@ const router = express.Router();
 const User = require('../models/user');
 const catchAsync = require('../utils/catchAsync');
 const passport = require('passport');
-const { redirect } = require('react-router-dom');
 const { storeReturnTo } = require('../middleware');
 const users = require('../controllers/users');
 
